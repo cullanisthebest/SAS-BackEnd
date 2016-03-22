@@ -885,16 +885,25 @@ app.route('/residencies')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
-        ResidencyModel.find(function (error, residencies) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (student) {
+        ResidencyModel.find({"student": student}, function (error, residencies) {
             if (error) response.send(error);
             response.json({residency: residencies});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
+    }
+    else if (name) {
+        ResidencyModel.find({"name": name}, function (error, residencies) {
             if (error) response.send(error);
-            response.json({residency: students});
+            response.json({residency: residencies});
+        });
+    }     
+    else {
+        ResidencyModel.find(function (error, residencies) {
+            if (error) response.send(error);
+            response.json({residency: residencies});
         });
     }
 });
@@ -945,16 +954,25 @@ app.route('/genders')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
-        GenderModel.find(function (error, genders) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (student) {
+        GenderModel.find({"student": student}, function (error, genders) {
             if (error) response.send(error);
             response.json({gender: genders});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
+    }
+    else if (name) {
+        GenderModel.find({"name": name}, function (error, genders) {
             if (error) response.send(error);
-            response.json({gender: students});
+            response.json({gender: genders});
+        });
+    }     
+    else {
+        GenderModel.find(function (error, genders) {
+            if (error) response.send(error);
+            response.json({gender: genders});
         });
     }
 });
