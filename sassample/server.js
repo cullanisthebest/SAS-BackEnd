@@ -314,57 +314,19 @@ app.route('/students')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.student;
-    if (!Student) {
+    var number = request.query.number;
+    if (number) {
+        StudentsModel.find({"number": number}, function (error, students) {
+            if (error) response.send(error);
+            response.json({student: students});
+        });
+    }
+    else{
         StudentsModel.find(function (error, students) {
             if (error) response.send(error);
             response.json({student: students});
         });
     }
-// } else {
-//     if (Student == "grade"){
-//         StudentsModel.find({"grade": request.query.grade}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if (Student == "residency"){
-//         StudentsModel.find({"residency": request.query.residency}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if(Student == "gender"){
-//         StudentsModel.find({"gender": request.query.gender}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if(Student == "country"){
-//         StudentsModel.find({"country": request.query.country}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if(Student == "province"){
-//         StudentsModel.find({"province": request.query.province}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if(Student == "city"){
-//         StudentsModel.find({"city": request.query.city}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-//     else if(Student == "academicload"){
-//         StudentsModel.find({"academicload": request.query.academicload}, function (error, students) {
-//             if (error) response.send(error);
-//             response.json({student: students});
-//         });
-//     }
-// }
 });
 
 app.route('/students/:student_id')
@@ -1023,33 +985,27 @@ app.route('/countries')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (student) {
+        CountryModel.find({"student": student}, function (error, countries) {
+            if (error) response.send(error);
+            response.json({country: countries});
+        });
+    }
+    else if (name) {
+        CountryModel.find({"name": name}, function (error, countries) {
+            if (error) response.send(error);
+            response.json({country: countries});
+        });
+    }     
+    else {
         CountryModel.find(function (error, countries) {
             if (error) response.send(error);
             response.json({country: countries});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
-            if (error) response.send(error);
-            response.json({country: students});
-        });
     }
-
-// //added
-// var Province = request.query.filter;
-// if (!Province) {
-//     CountryModel.find(function (error, countries) {
-//         if (error) response.send(error);
-//         response.json({country: countries});
-//     });
-// } else {
-//     PermissionTypeModel.find({"province": Province.province}, function (error, provinces) {
-//         if (error) response.send(error);
-//         response.json({country: provinces});
-//     });
-// }
-// //end added
 });
 
 app.route('/countries/:country_id')
@@ -1099,35 +1055,27 @@ app.route('/provinces')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (name) {
+        ProvinceModel.find({"name": name}, function (error, provinces) {
+            if (error) response.send(error);
+            response.json({province: provinces});
+        });
+    }   
+    else if (student) {
+        ProvinceModel.find({"student": student}, function (error, provinces) {
+            if (error) response.send(error);
+            response.json({province: provinces});
+        });
+    }  
+    else {
         ProvinceModel.find(function (error, provinces) {
             if (error) response.send(error);
             response.json({province: provinces});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
-            if (error) response.send(error);
-            response.json({province: students});
-        });
     }
-
-// //added
-// var Province = request.query.province;
-// if (!Province) {
-//     ProvinceModel.find(function (error, provinces) {
-//         if (error) response.send(error);
-//         response.json({province: provinces});
-//     });
-// } else {
-//     if(Province == "country"){
-//         ProvinceModel.find({"country": request.query.country}, function (error, provinces) {
-//             if (error) response.send(error);
-//             response.json({province: provinces});
-//         });
-//     }
-// }
-// //end added
 });
 
 app.route('/provinces/:province_id')
@@ -1178,16 +1126,25 @@ app.route('/cities')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
-        CityModel.find(function (error, cities) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (student) {
+        CityModel.find({"student": student}, function (error, cities) {
             if (error) response.send(error);
             response.json({city: cities});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
+    }
+    else if (name) {
+        CityModel.find({"name": name}, function (error, cities) {
             if (error) response.send(error);
-            response.json({city: students});
+            response.json({city: cities});
+        });
+    }     
+    else {
+        CityModel.find(function (error, cities) {
+            if (error) response.send(error);
+            response.json({city: cities});
         });
     }
 });
@@ -1238,16 +1195,25 @@ app.route('/academicloads')
     });
 })
 .get(function (request, response) {
-    var Student = request.query.filter;
-    if (!Student) {
-        AcademicloadModel.find(function (error, academicloads) {
+    var student = request.query.student;
+    var name = request.query.name;
+
+    if (student) {
+        AcademicloadModel.find({"student": student}, function (error, academicloads) {
             if (error) response.send(error);
             response.json({academicload: academicloads});
         });
-    } else {
-        PermissionTypeModel.find({"student": Student.student}, function (error, students) {
+    }
+    else if (name) {
+        AcademicloadModel.find({"name": name}, function (error, academicloads) {
             if (error) response.send(error);
-            response.json({academicload: students});
+            response.json({academicload: academicloads});
+        });
+    }     
+    else {
+        AcademicloadModel.find(function (error, academicloads) {
+            if (error) response.send(error);
+            response.json({academicload: academicloads});
         });
     }
 });
@@ -1353,7 +1319,14 @@ app.route('/academicprogramcodes')
 })
 .get(function (request, response) {
     var academicprogramcode = request.query.academicprogramcode;
-    if (!academicprogramcode) {
+    var name = request.query.name;
+    if(name){
+        AcademicprogramcodeModel.find({"name":name}, function (error, academicprogramcodes) {
+            if (error) response.send(error);
+            response.json({academicprogramcode: academicprogramcodes});
+        });
+    }
+    else {
         AcademicprogramcodeModel.find(function (error, academicprogramcodes) {
             if (error) response.send(error);
             response.json({academicprogramcode: academicprogramcodes});
@@ -1374,8 +1347,16 @@ app.route('/programadministrations')
 .get(function (request, response) {
     var programadministration = request.query.programadministration;
     var department = request.query.department;
+    var name = request.query.name;
+
     if(department){
         ProgramadministrationModel.find({"department":department}, function (error, programadministrations) {
+            if (error) response.send(error);
+            response.json({programadministration: programadministrations});
+        });
+    }
+    else if(name){
+        ProgramadministrationModel.find({"name":name}, function (error, programadministrations) {
             if (error) response.send(error);
             response.json({programadministration: programadministrations});
         });
@@ -1444,8 +1425,16 @@ app.route('/departments')
 .get(function (request, response) {
     var department = request.query.department;
     var faculty = request.query.faculty;
-    if(faculty){
-        DepartmentModel.find({"faculty":faculty}, function (error, departments) {
+    var name = request.query.name;
+
+    if(name){
+        DepartmentModel.find({"name": name}, function (error, departments) {
+            if (error) response.send(error);
+            response.json({department: departments});
+        });
+    }
+    else if(faculty){
+        DepartmentModel.find({"faculty": faculty}, function (error, departments) {
             if (error) response.send(error);
             response.json({department: departments});
         });
@@ -1513,7 +1502,14 @@ app.route('/faculties')
 })
 .get(function (request, response) {
     var faculty = request.query.faculty;
-    if (!faculty) {
+    var name = request.query.name;
+    if(name){
+        FacultyModel.find({"name": name}, function (error, faculties) {
+            if (error) response.send(error);
+            response.json({faculty: faculties});
+        });
+    }
+    else{
         FacultyModel.find(function (error, faculties) {
             if (error) response.send(error);
             response.json({faculty: faculties});
