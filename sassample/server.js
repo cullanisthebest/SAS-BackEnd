@@ -1272,7 +1272,14 @@ app.route('/itrprograms')
 })
 .get(function (request, response) {
     var itrprogram = request.query.itrprogram;
-    if (!itrprogram) {
+    var student = request.query.student;
+    if(student){
+        ItrprogramModel.find({"student": student}, function (error, itrprograms) {
+            if (error) response.send(error);
+            response.json({itrprogram: itrprograms});
+        });
+            }
+    else {
         ItrprogramModel.find(function (error, itrprograms) {
             if (error) response.send(error);
             response.json({itrprogram: itrprograms});
@@ -1280,33 +1287,33 @@ app.route('/itrprograms')
     } 
 });
 
-app.route('/itrlists/:itrlist_id')
+app.route('/itrprograms/:itrprogram_id')
 .get(function (request, response) {
-    ItrlistModel.findById(request.params.itrlist_id, function (error, itrlist) {
+    ItrprogramModel.findById(request.params.itrprogram_id, function (error, itrprogram) {
         if (error) {
             response.send({error: error});
         }
         else {
-            response.json({itrlist: itrlist});
+            response.json({itrprogram: itrprogram});
         }
     });
 })
 .put(function (request, response) {
-    ItrlistModel.findById(request.params.itrlist_id, function (error, itrlist) {
+    ItrprogramModel.findById(request.params.itrprogram_id, function (error, itrprogram) {
         if (error) {
             response.send({error: error});
         }
         else {
-            itrlist.order = request.body.itrlist.order;
-            itrlist.eligibility = request.body.itrlist.eligibility;
-            itrlist.student = request.body.itrlist.student;
-            itrlist.academicprogramcode = request.body.itrlist.academicprogramcode;
-            itrlist.save(function (error) {
+            itrprogram.order = request.body.itrprogram.order;
+            itrprogram.eligibility = request.body.itrprogram.eligibility;
+            itrprogram.student = request.body.itrprogram.student;
+            itrprogram.academicprogramcode = request.body.itrprogram.academicprogramcode;
+            itrprogram.save(function (error) {
                 if (error) {
                     response.send({error: error});
                 }
                 else {
-                    response.json({itrlist: itrlist});
+                    response.json({itrprogram: itrprogram});
                 }
             });
         }
@@ -1340,6 +1347,38 @@ app.route('/academicprogramcodes')
     } 
 });
 //END ADDED - ACADEMICPROGRAMCODES
+
+//ADDED ALAN MARCh 23
+app.route('/academicprogramcodes/:academicprogramcode_id')
+.get(function (request, response) {
+    AcademicprogramcodeModel.findById(request.params.academicprogramcode_id, function (error, academicprogramcode) {
+        if (error) response.send(error);
+        response.json({academicprogramcode: academicprogramcode});
+    })
+})
+.put(function (request, response) {
+    AcademicprogramcodeModel.findById(request.params.academicprogramcode_id, function (error, academicprogramcode) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            academicprogramcode.name = request.body.academicprogramcode.name;
+            academicprogramcode.itrprogram = request.body.academicprogramcode.itrprogram;
+            academicprogramcode.admissionrule = request.body.academicprogramcode.admissionrule;
+            academicprogramcode.programadministrations = request.body.academicprogramcode.programadministrations;
+
+            academicprogramcode.save(function (error) {
+                if (error) {
+                    response.send({error: error});
+                }
+                else {
+                    response.json({academicprogramcode: academicprogramcode});
+                }
+            });
+        }
+    })
+})
+//END ADDED
 
 //ADDED - PROGRAMADMINISTRATIONS
 app.route('/programadministrations')
