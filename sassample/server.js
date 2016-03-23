@@ -52,6 +52,7 @@ var studentsSchema = mongoose.Schema(
     firstName: String,
     lastName: String,
     DOB: String,
+    cumAvg: String,
     resInfo: {type: mongoose.Schema.ObjectId, ref: 'ResidencyModel'},
     gender: {type: mongoose.Schema.ObjectId, ref: 'GenderModel'},
     country: {type: mongoose.Schema.ObjectId, ref: 'CountryModel'},
@@ -350,6 +351,7 @@ app.route('/students/:student_id')
             student.firstName = request.body.student.firstName;
             student.lastName = request.body.student.lastName;
             student.DOB = request.body.student.DOB;
+            student.cumAvg = request.body.student.cumAvg;
             student.resInfo = request.body.student.resInfo;
             student.gender = request.body.student.gender;
             student.country = request.body.student.country;
@@ -473,18 +475,20 @@ app.route('/coursecodes')
     });
 })
 .get(function (request, response) {
-    var Grade = request.query.filter;
-    if (!Grade) {
+    var number = request.query.number;
+    var code = request.query.code;
+    if(number && code){
+        CoursecodeModel.find({"number": number, "code": code}, function (error, coursecodes) {
+            if (error) response.send(error);
+            response.json({coursecode: coursecodes});
+        });
+    }
+    else{
         CoursecodeModel.find(function (error, coursecodes) {
             if (error) response.send(error);
             response.json({coursecode: coursecodes});
         });
-    } else {
-        PermissionTypeModel.find({"grade": Grade.grade}, function (error, grades) {
-            if (error) response.send(error);
-            response.json({coursecode: grades});
-        });
-    }
+    } 
 });
 
 app.route('/coursecodes/:coursecode_id')
@@ -602,16 +606,17 @@ app.route('/degreecodes')
     });
 })
 .get(function (request, response) {
-    var Programrecord = request.query.filter;
-    if (!Programrecord) {
-        DegreecodeModel.find(function (error, degreecodes) {
+    var name = request.query.name;
+    if(name) {
+        DegreecodeModel.find({"name": name}, function (error, degreecodes) {
             if (error) response.send(error);
             response.json({degreecode: degreecodes});
         });
-    } else {
-        PermissionTypeModel.find({"programrecord": Programrecord.programrecord}, function (error, programrecords) {
+    }
+    else {
+        DegreecodeModel.find(function (error, degreecodes) {
             if (error) response.send(error);
-            response.json({degreecode: programrecords});
+            response.json({degreecode: degreecodes});
         });
     }
 });
@@ -664,16 +669,17 @@ app.route('/termcodes')
     });
 })
 .get(function (request, response) {
-    var Programrecord = request.query.filter;
-    if (!Programrecord) {
-        TermcodeModel.find(function (error, termcodes) {
+    var name = request.query.name;
+    if(name) {
+        TermcodeModel.find({"name": name}, function (error, termcodes) {
             if (error) response.send(error);
             response.json({termcode: termcodes});
         });
-    } else {
-        PermissionTypeModel.find({"programrecord": Programrecord.programrecord}, function (error, programrecords) {
+    }
+    else {
+        TermcodeModel.find(function (error, termcodes) {
             if (error) response.send(error);
-            response.json({termcode: programrecords});
+            response.json({termcode: termcodes});
         });
     }
 });
