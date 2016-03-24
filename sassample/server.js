@@ -316,7 +316,58 @@ app.route('/students')
 })
 .get(function (request, response) {
     var number = request.query.number;
-    if (number) {
+    var generate = request.query.generate;
+
+
+    var gradesArray = [];
+    var studentChoicesArr = [];
+    var logicalExpressionArr = [];
+    if(generate){
+        StudentsModel.find(function (error, students) {
+            //iterate through students
+                for (var i = 0; i < students.length; i++){
+                    //change firstName to Average, then push
+                    gradesArray.push([students[i].cumAvg, students[i].id]);
+                }                 
+
+                gradesArray.sort(function sortFunction(a, b) {
+                    if (a[0] === b[0]) {
+                        return 0;
+                    }
+                    else {
+                        return (a[0] > b[0]) ? -1 : 1;
+                    }
+                });  
+
+                for (var allStudents = 0; allStudents < 2; allStudents++ ){
+                    ItrprogramModel.find({"student": gradesArray[allStudents][1]}).then(function (studentChoices) {
+                        //console.log(studentChoices);
+                        var tempArr = [];
+                        for (var a = 0; a < studentChoices.length; a++){
+                            var id = studentChoices[a].academicprogramcode;
+                            console.log(id);
+                            //var program = myStore.peekRecord('academicprogramcode', id);
+                            //var admissionRuleId = program.get('admissionrule').get('id');
+                            AcademicprogramcodeModel.findById(id, function (academicprogramcode){
+                                console.log(academicprogramcode);
+                            })
+                            //tempArr.push(admissionRuleId);
+                        }//end studentchoices for loop
+                        //console.log(tempArr);
+                        //studentChoicesArr.push(tempArr);
+                        //console.log(studentChoicesArr[1])
+                    })
+                }//end allstudents for loop
+                //console.log(studentChoicesArr);
+                //console.log(studentChoicesArr[0]);
+            //if (error) response.send(error);
+            //response.json({student: students});
+        });
+    }
+    
+
+
+    else if (number) {
         StudentsModel.find({"number": number}, function (error, students) {
             if (error) response.send(error);
             response.json({student: students});
