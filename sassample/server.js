@@ -322,12 +322,14 @@ app.route('/students')
     var gradesArray = [];
     var studentChoicesArr = [];
     var logicalExpressionArr = [];
+    var tempArr = new Array();
+
     if(generate){
         StudentsModel.find(function (error, students) {
             //iterate through students
                 for (var i = 0; i < students.length; i++){
                     //change firstName to Average, then push
-                    gradesArray.push([students[i].cumAvg, students[i].id]);
+                    gradesArray.push([students[i].cumAvg, students[i].id, students[i].number, students[i].firstName, students[i].lastName]);
                 }                 
 
                 gradesArray.sort(function sortFunction(a, b) {
@@ -339,29 +341,47 @@ app.route('/students')
                     }
                 });  
 
-                for (var allStudents = 0; allStudents < 2; allStudents++ ){
-                    ItrprogramModel.find({"student": gradesArray[allStudents][1]}).then(function (studentChoices) {
-                        //console.log(studentChoices);
-                        var tempArr = [];
+                var returnMsg = distribute(gradesArray, 1);
+                console.log(returnMsg);
+
+                function distribute(gradesArray, i){
+                    ItrprogramModel.find({"student": gradesArray[i][1]}).then(function (studentChoices) {
+                        tempArr = [];
                         for (var a = 0; a < studentChoices.length; a++){
                             var id = studentChoices[a].academicprogramcode;
-                            console.log(id);
-                            //var program = myStore.peekRecord('academicprogramcode', id);
-                            //var admissionRuleId = program.get('admissionrule').get('id');
-                            AcademicprogramcodeModel.findById(id, function (academicprogramcode){
-                                console.log(academicprogramcode);
-                            })
-                            //tempArr.push(admissionRuleId);
-                        }//end studentchoices for loop
-                        //console.log(tempArr);
-                        //studentChoicesArr.push(tempArr);
-                        //console.log(studentChoicesArr[1])
-                    })
-                }//end allstudents for loop
-                //console.log(studentChoicesArr);
-                //console.log(studentChoicesArr[0]);
-            //if (error) response.send(error);
-            //response.json({student: students});
+                            tempArr.push(id);
+                        }
+                    }).then(function(){
+                        var tempAdmissionArr = [];
+                        for(var b = 0; b < tempArr.length; b++){
+
+                        AcademicprogramcodeModel.findById(tempArr[b], function (error, academicprogramcode) {
+                            if (error) response.send(error);
+                                LogicalexpressionModel.find({"admissionrule": academicprogramcode.admissionrule}).then(function (exps) {
+                                    for(var c = 0; c < exps.length ; c++){
+                                        var curBoolean = exps[c].booleanExp;
+                                        var replacedBoolean = curBoolean.replace("AVG", gradesArray[i][0]);
+                                        var splittedBoolean = replacedBoolean.split(" ");
+                                        var formattedBoolean = splittedBoolean[1] + splittedBoolean[3] + splittedBoolean[4];
+                                        var courseMark = splittedBoolean[1];
+                                        var operator = splittedBoolean[3];
+                                        var requiredMark = splittedBoolean[4];
+
+                                        if(operator == ">="){
+                                            if(courseMark >= requiredMark){
+                                                var distributeMsg = gradesArray[i][2] + " - " + gradesArray[i][3] 
+                                                + " " + gradesArray[i][4] + " (" +  academicprogramcode.name + ")";
+                                                //response.json({msg: distributeMsg});
+                                                console.log(distributeMsg);
+                                                return distributeMsg;
+                                            }
+                                        }
+                                    }
+                                })
+                            })  
+                        }
+                    })//end allstudents for loop
+                }
         });
     }
     
