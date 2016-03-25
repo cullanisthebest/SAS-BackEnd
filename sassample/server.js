@@ -212,78 +212,6 @@ var logicalexpressionSchema = mongoose.Schema(
 }
 );
 
-/*ADDED ALAN*/
-/*var usersSchema = mongoose.Schema(
-    {
-        firstName: String,
-        lastName: String,
-        email: String,
-        enabled: Boolean,
-        userShadow: {type: mongoose.Schema.ObjectId, ref: ('PasswordsModel')},
-        userRoles: [{type: mongoose.Schema.ObjectId, ref: 'UserRoleModel'}]
-    }
-);
-var passwordSchema = mongoose.Schema(
-    {
-        userName: String,
-        salt: String,
-        encryptedPassword: String,
-        userAccountExpiryDate: Date,
-        passwordMustChanged : Boolean,
-        passwordReset: Boolean,
-        user: {type: mongoose.Schema.ObjectId, ref: ('UsersModel')}
-    }
-);
-var loginSchema = mongoose.Schema(
-    {
-        userName: String,
-        password: String,
-        nonce: String,
-        response: String,
-        token: String,
-        requestType: String,
-        wrongUserName: Boolean,
-        wrongPassword: Boolean,
-        passwordMustChanged: Boolean,
-        passwordReset: Boolean,
-        loginFailed: Boolean,
-        sessionIsActive: Boolean
-    }
-);
-var rootSchema = mongoose.Schema(
-    {
-        password: String,
-        nonce: String,
-        response: String,
-        wrongPassword: Boolean,
-        sessionIsActive: Boolean
-    }
-);
-var userRoleSchema = mongoose.Schema(
-    {
-        dateAssigned: Date,
-        user: {type: mongoose.Schema.ObjectId, ref: ('UsersModel')},
-        role: {type: mongoose.Schema.ObjectId, ref: ('RoleCodeModel')}
-    }
-);
-var roleCodeSchema = mongoose.Schema(
-    {
-        name: String,
-        userRoles: [{type: mongoose.Schema.ObjectId, ref: 'UserRoleModel'}],
-        features: [{type: mongoose.Schema.ObjectId, ref: 'RolePermissionModel'}]
-    }
-);
-var rolePermissionSchema = mongoose.Schema(
-    {
-        code: String,
-        sysFeature: String,
-        roleCodes: [{type: mongoose.Schema.ObjectId, ref: ('RoleCodeModel')}]
-    }
-);*/
-/*END ADDED ALAN*/
-
-
-
 var StudentsModel = mongoose.model('student', studentsSchema);
 var ResidencyModel = mongoose.model('residency', residencySchema);
 var GenderModel = mongoose.model('gender', genderSchema);
@@ -317,82 +245,492 @@ app.route('/students')
 .get(function (request, response) {
     var number = request.query.number;
     var generate = request.query.generate;
-
-
-    var gradesArray = [];
-    var studentChoicesArr = [];
-    var logicalExpressionArr = [];
-    var tempArr = new Array();
-
-    if(generate){
+    if (generate) 
+    {
+        var returnMessage="";
+        var allStudents= [];
+        var allItrprograms=[];
+        var allAcademicprogramcodes=[];
+        var allLogicalExpressions=[];
+        var allGrades=[];
+        var allCourses=[];
         StudentsModel.find(function (error, students) {
-            //iterate through students
-                for (var i = 0; i < students.length; i++){
-                    //change firstName to Average, then push
-                    gradesArray.push([students[i].cumAvg, students[i].id, students[i].number, students[i].firstName, students[i].lastName]);
-                }                 
+            for (var i = 0; i < students.length; i++)
+            {
+                allStudents.push(students[i]);
+            }
+            var cleanedStudents=new Array(allStudents.length);
+            for(var i=0;i<allStudents.length;i++)
+            {
+              cleanedStudents[i]=new Array(4);
+              cleanedStudents[i][0]=allStudents[i].id;
+              cleanedStudents[i][1]=allStudents[i].number;
+              cleanedStudents[i][2]=allStudents[i].cumAvg;
+              cleanedStudents[i][3]=allStudents[i];
+              if(cleanedStudents[i][2]=="")
+              {
+                cleanedStudents[i][2]=0;
+              }
+            }
 
-                gradesArray.sort(function sortFunction(a, b) {
-                    if (a[0] === b[0]) {
-                        return 0;
+            //insertion sort
+            for(var i = 0; i < cleanedStudents.length; i++) 
+            {
+              var tmp = cleanedStudents[i];
+              for(var j = i - 1; j >= 0 && (parseFloat(cleanedStudents[j][2]) < parseFloat(tmp[2])); j--) 
+              {
+                cleanedStudents[j+1] = cleanedStudents[j];
+              }
+              cleanedStudents[j+1] = tmp;
+            }
+
+            // //print
+            // for(var i=0;i<cleanedStudents.length;i++)
+            // {
+            //     console.log(cleanedStudents[i]);
+            // }
+
+            ItrprogramModel.find(function (error, itrprograms) {
+                for (var i = 0; i < itrprograms.length; i++)
+                {
+                    allItrprograms.push(itrprograms[i]);
+                }
+
+                //find all itrprograms
+                var cleanedItr=new Array(allItrprograms.length);
+                for(var i=0;i<allItrprograms.length;i++)
+                {
+                  cleanedItr[i]=new Array(6);
+                  cleanedItr[i][0]=allItrprograms[i].student;
+                  cleanedItr[i][1]=allItrprograms[i].order;
+                  cleanedItr[i][2]=allItrprograms[i].academicprogramcode;
+                }
+
+                // //print
+                // for(var i=0;i<cleanedItr.length;i++)
+                // {
+                //   console.log(cleanedItr[i]);
+                // }
+                AcademicprogramcodeModel.find(function (error, academicprogramcodes) 
+                {
+                    for (var i = 0; i < academicprogramcodes.length; i++)
+                    {
+                        allAcademicprogramcodes.push(academicprogramcodes[i]);
                     }
-                    else {
-                        return (a[0] > b[0]) ? -1 : 1;
-                    }
-                });  
-
-                var returnMsg = distribute(gradesArray, 1);
-                console.log(returnMsg);
-
-                function distribute(gradesArray, i){
-                    ItrprogramModel.find({"student": gradesArray[i][1]}).then(function (studentChoices) {
-                        tempArr = [];
-                        for (var a = 0; a < studentChoices.length; a++){
-                            var id = studentChoices[a].academicprogramcode;
-                            tempArr.push(id);
+                    for(var i=0;i<cleanedItr.length;i++)
+                    {
+                        for(var j=0;j<allAcademicprogramcodes.length;j++)
+                        {
+                            if(allAcademicprogramcodes[j].id==cleanedItr[i][2])
+                            {
+                                cleanedItr[i][3]=allAcademicprogramcodes[j].admissionrule;
+                                cleanedItr[i][4]=allAcademicprogramcodes[j].name;
+                            }
                         }
-                    }).then(function(){
-                        var tempAdmissionArr = [];
-                        for(var b = 0; b < tempArr.length; b++){
+                        
+                    }
+                    LogicalexpressionModel.find(function (error, logicalexpressions) 
+                    {
+                        for (var i = 0; i < logicalexpressions.length; i++)
+                        {
+                            allLogicalExpressions.push(logicalexpressions[i]);
+                        }
+                        for(var i=0;i<cleanedItr.length;i++)
+                        {
+                            var holder=new Array(100);
+                            var countOfLogicalExpressions=0;
+                            for(var j=0;j<allLogicalExpressions.length;j++)
+                            {
 
-                        AcademicprogramcodeModel.findById(tempArr[b], function (error, academicprogramcode) {
-                            if (error) response.send(error);
-                                LogicalexpressionModel.find({"admissionrule": academicprogramcode.admissionrule}).then(function (exps) {
-                                    for(var c = 0; c < exps.length ; c++){
-                                        var curBoolean = exps[c].booleanExp;
-                                        var replacedBoolean = curBoolean.replace("AVG", gradesArray[i][0]);
-                                        var splittedBoolean = replacedBoolean.split(" ");
-                                        var formattedBoolean = splittedBoolean[1] + splittedBoolean[3] + splittedBoolean[4];
-                                        var courseMark = splittedBoolean[1];
-                                        var operator = splittedBoolean[3];
-                                        var requiredMark = splittedBoolean[4];
+                                //console.log(allLogicalExpressions[j].admissionrule+"=="+cleanedItr[i][3]);
+                                if(allLogicalExpressions[j].admissionrule.toString()==cleanedItr[i][3].toString())
+                                {
+                                    holder[countOfLogicalExpressions]=allLogicalExpressions[j].booleanExp;
+                                    countOfLogicalExpressions++;
+                                }
+                            }
+                            cleanedItr[i][5]=new Array(countOfLogicalExpressions);
+                            for(var j=0;j<countOfLogicalExpressions;j++)
+                            {
+                                cleanedItr[i][5][j]=holder[j];
+                            }
+                            
+                        }
+                        // //print
+                        // for(var i=0;i<cleanedItr.length;i++)
+                        // {
+                        //   console.log(cleanedItr[i]);
+                        // }
+                        GradeModel.find(function (error, grades) 
+                        {
+                            for (var i = 0; i < grades.length; i++)
+                            {
+                                allGrades.push(grades[i]);
+                            }
+                            var cleanedGrades= new Array(grades.length);
+                            for(var i=0;i<allGrades.length;i++)
+                            {
+                              cleanedGrades[i]=new Array(3);
+                              cleanedGrades[i][0]=allGrades[i].student;
+                              cleanedGrades[i][1]=allGrades[i].coursecode;
+                              cleanedGrades[i][2]=allGrades[i].mark;
+                            }
 
-                                        if(operator == ">="){
-                                            if(courseMark >= requiredMark){
-                                                var distributeMsg = gradesArray[i][2] + " - " + gradesArray[i][3] 
-                                                + " " + gradesArray[i][4] + " (" +  academicprogramcode.name + ")";
-                                                //response.json({msg: distributeMsg});
-                                                console.log(distributeMsg);
-                                                return distributeMsg;
+                            // //print
+                            // for(var i=0;i<cleanedGrades.length;i++)
+                            // {
+                            //     console.log(cleanedGrades[i]);
+                            // }
+
+                            CoursecodeModel.find(function (error, courses) 
+                            {
+                                for (var i = 0; i < courses.length; i++)
+                                {
+                                    allCourses.push(courses[i]);
+                                }
+                                var cleanedCourses= new Array(courses.length);
+
+                                for(var i=0;i<allCourses.length;i++)
+                                {
+                                  cleanedCourses[i]=new Array(3);
+                                  cleanedCourses[i][0]=allCourses[i].id;
+                                  cleanedCourses[i][1]=allCourses[i].code;
+                                  cleanedCourses[i][2]=allCourses[i].number;
+                                }
+                                // //print
+                                // for(var i=0;i<cleanedCourses.length;i++)
+                                // {
+                                //     console.log(cleanedCourses[i]);
+                                // }
+
+                                //Now handle the students
+                                for(var i=0;i<cleanedStudents.length;i++)
+                                {
+                                    //find the students cleanedItrlist
+                                    var studentsChoice= new Array(11);
+                                    var hasItr=false;
+                                    for(var j=0;j<cleanedItr.length;j++)
+                                    {
+                                        if(cleanedStudents[i][0].toString()==cleanedItr[j][0].toString())
+                                        {
+                                            var rank=parseInt(cleanedItr[j][1]);
+                                            studentsChoice[rank]=new Array(6);
+                                            for(var p=0;p<6;p++)
+                                            {
+                                                studentsChoice[rank][p]=cleanedItr[j][p];
                                             }
+                                            hasItr=true;
                                         }
                                     }
-                                })
-                            })  
-                        }
-                    })//end allstudents for loop
-                }
+                                    //console.log(cleanedStudents[i][1]+": filled out intent to register?"+hasItr);
+                                    if(hasItr)
+                                    {
+                                        var notPlaced=true;
+                                        for(var q=1;q<11;q++)
+                                        {
+                                            if(notPlaced)
+                                            {
+                                                //check criteria
+                                                var accepted=false;
+
+                                                for(var l=0;l<studentsChoice[q][5].length;l++)
+                                                {
+                                                    //console.log("On boolean:"+l+" - "+studentsChoice[q][5][l]);
+                                                    var splitBool=studentsChoice[q][5][l].split(" ");
+                                                    var consideration=splitBool[1];//AVG
+                                                    var studentsMark;
+                                                    var operator=splitBool[3];//operator
+                                                    var requiredMark=splitBool[4];//mark
+                                                    if(consideration=="AVG")
+                                                    {
+                                                        //then just use average
+                                                        studentsMark=cleanedStudents[i][2];
+                                                    }
+                                                    else
+                                                    {
+                                                        //find students grade in that course...
+                                                        //console.log(splitBool);
+                                                        var code=splitBool[1];
+                                                        var number=splitBool[2];
+                                                        var number1="XXXX";
+                                                        //var ABcourse=false;
+                                                        console.log("Code: "+code+" - Number:"+number);
+                                                        if(number.includes("A"))
+                                                        {
+                                                            //console.log("Includes A");
+                                                            number1=number.replace("A","B");
+                                                            //ABcourse=true;
+                                                            //console.log(number);
+                                                        }
+                                                        else if(number.includes("B"))
+                                                        {
+                                                            //console.log("Includes B");
+                                                            number1=number.replace("B","A");
+                                                            //ABcourse=true;
+                                                            //console.log(number);
+                                                        }
+                                                        console.log("Code: "+code+" - Number:"+number1);
+                                                        var courseId;
+                                                        var courseId1="XXXX";
+
+                                                        //find course id
+                                                        for(var f=0;f<cleanedCourses.length;f++)
+                                                        {
+                                                            if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number)
+                                                            {
+                                                                //console.log("Found the course \n");
+                                                                courseId=cleanedCourses[f][0];
+                                                            }
+                                                            if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number1)
+                                                            {
+                                                                //console.log("Found the course \n");
+                                                                courseId1=cleanedCourses[f][0];
+                                                            }
+                                                        }
+
+                                                        //find students mark
+                                                        for(var f=0;f<cleanedGrades.length;f++)
+                                                        {
+                                                            if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString()||cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                            {
+                                                                //console.log("Found the grade and it's: "+cleanedGrades[f][2]+"\n");
+                                                                studentsMark=cleanedGrades[f][2];
+                                                            }
+                                                        }
+                                                    }
+                                                    switch(operator)
+                                                    {
+                                                        case">":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark>requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark>requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+
+                                                        case">=":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark>=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark>=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+
+                                                        case"<":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark<requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark<requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+
+                                                        case"<=":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark<=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark<=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+
+                                                        case"=":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark==requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark==requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+
+                                                        case"!=":
+                                                            if(!accepted&&l==0)
+                                                            {
+                                                                if(studentsMark!=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    accepted=true;
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                            }
+                                                            else if(accepted)
+                                                            {
+                                                                if(studentsMark!=requiredMark)
+                                                                {
+                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
+                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                                    //notPlaced=false;
+                                                                }
+                                                                else
+                                                                {
+                                                                    accepted=false;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                //reject
+                                                                //break
+                                                            }
+                                                        break;
+                                                    }
+                                                }
+                                                if(accepted)
+                                                {
+                                                    returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                    notPlaced=false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                break;
+                                            }
+                                            
+                                        }
+                                        if(notPlaced)
+                                        {
+                                            //console.log("Student: "+cleanedStudents[i][1]+" is not eligibile for any program");
+                                            returnMessage+="Student: "+cleanedStudents[i][1]+" is not eligibile for any program ("+cleanedStudents[i][2]+") \n";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //console.log("Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR");
+                                        returnMessage+="Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR ("+cleanedStudents[i][2]+") \n";
+                                    }
+                                }
+                            //console.log(returnMessage);
+                            //encapsulate as a student object
+
+                            allStudents[0].number=returnMessage;
+                            response.json({student:allStudents[0]});
+                            });
+                        });
+                    });
+                });
+            });
         });
     }
-    
-
-
-    else if (number) {
+    else if (number) 
+    {
         StudentsModel.find({"number": number}, function (error, students) {
             if (error) response.send(error);
             response.json({student: students});
         });
     }
+            
     else{
         StudentsModel.find(function (error, students) {
             if (error) response.send(error);
@@ -1390,21 +1728,20 @@ app.route('/itrprograms/:itrprogram_id')
         }
     });
 })
-//END ADDED - ITRPROGRAMS
-
 //ADDED - ACADEMICPROGRAMCODES
 app.route('/academicprogramcodes')
 .post(function (request, response) {
     var academicprogramcode = new AcademicprogramcodeModel(request.body.academicprogramcode);
     academicprogramcode.save(function (error) {
         if (error) response.send(error);
-        response.json({academicprogramcode: academicprogramcode});
+        response.json({academicprogramcode: academicprogramcodes});
     });
 })
 .get(function (request, response) {
-    var academicprogramcode = request.query.academicprogramcode;
+    //var academicprogramcode = request.query.academicprogramcode;
     var name = request.query.name;
-    if(name){
+    if(name)
+    {
         AcademicprogramcodeModel.find({"name":name}, function (error, academicprogramcodes) {
             if (error) response.send(error);
             response.json({academicprogramcode: academicprogramcodes});
@@ -1814,4 +2151,3 @@ app.route('/logicalexpressions/:logicalexpression_id')
 app.listen(7700, function () {
     console.log('Listening on port 7700');
 });
-
