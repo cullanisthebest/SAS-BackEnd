@@ -212,6 +212,17 @@ var logicalexpressionSchema = mongoose.Schema(
 }
 );
 
+var programplacementSchema = mongoose.Schema(
+{
+    academicprogramcode: {type:mongoose.Schema.ObjectId, ref: 'AcademicprogramcodeModel'},
+    distributionresult: {type: mongoose.Schema.ObjectId, ref: 'DistributionresultModel'},
+    commentcode: {type: mongoose.Schema.ObjectId, ref: 'CommentcodeModel'},
+    student: {type: mongoose.Schema.ObjectId, ref: 'StudentsModel'},
+    choice: String,
+    override:String
+}
+);
+
 var StudentsModel = mongoose.model('student', studentsSchema);
 var ResidencyModel = mongoose.model('residency', residencySchema);
 var GenderModel = mongoose.model('gender', genderSchema);
@@ -233,6 +244,66 @@ var FacultyModel = mongoose.model('faculty', facultySchema);
 var DepartmentModel = mongoose.model('department', departmentSchema);
 var AdmissionruleModel = mongoose.model('admissionrule', admissionruleSchema);
 var LogicalexpressionModel = mongoose.model('logicalexpression', logicalexpressionSchema);
+var ProgramplacementModel = mongoose.model('programplacement',programplacementSchema);
+
+
+app.route('/programplacements')
+.post(function (request, response) {
+    var placed = new ProgramplacementModel(request.body.programplacement);
+    placed.save(function (error) {
+        if (error) response.send(error);
+        response.json({programplacement: programplacements});
+    });
+})
+.get(function (request, response) {
+    var distributionresult = request.query.distributionresult;
+    if (distributionresult){
+        ProgramplacementModel.find({"distributionresult": distributionresult}, function (error, programplacements) {
+        if (error) response.send(error);
+        response.json({programplacement: programplacements});
+    });
+    }
+    else{
+        ProgramplacementModel.find(function (error, programplacements) {
+            if (error) response.send(error);
+            response.json({programplacement: programplacements});
+        });
+    }
+});
+
+app.route('/programplacements/:programplacement_id')
+    .get(function (request, response) {
+        ProgramplacementModel.findById(request.params.programplacement_id, function (error, programplacement) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                response.json({programplacement: programplacement});
+            }
+        });
+    })
+    .put(function (request, response) {
+        ProgramplacementModel.findById(request.params.programplacement_id, function (error, programplacement) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                programplacement.academicprogramcode = request.body.programplacement.academicprogramcode;
+                programplacement.override="true";
+                programplacement.choice="Modified";
+
+                programplacement.save(function (error) {
+                    if (error) {
+                        response.send({error: error});
+                    }
+                    else {
+                        response.json({programplacement: programplacement});
+                    }
+                });
+            }
+        });
+    })
+
 
 app.route('/students')
 .post(function (request, response) {
@@ -254,7 +325,19 @@ app.route('/students')
         var allLogicalExpressions=[];
         var allGrades=[];
         var allCourses=[];
+        var allProgramplacements=[];
+        var Distributionresult;
         StudentsModel.find(function (error, students) {
+
+            var dateObj = new Date();
+            var month = dateObj.getUTCMonth() + 1;
+            var day = dateObj.getUTCDate();
+            var year = dateObj.getUTCFullYear();
+            var newdate = day + "/" + month + "/" + year;
+            Distributionresult= new DistributionresultModel({
+                date:newdate
+            });
+            Distributionresult.save();
             for (var i = 0; i < students.length; i++)
             {
                 allStudents.push(students[i]);
@@ -478,12 +561,10 @@ app.route('/students')
                                                         {
                                                             if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number)
                                                             {
-                                                                //console.log("Found the course \n");
                                                                 courseId=cleanedCourses[f][0];
                                                             }
                                                             if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number1)
                                                             {
-                                                                //console.log("Found the course \n");
                                                                 courseId1=cleanedCourses[f][0];
                                                             }
                                                         }
@@ -493,7 +574,6 @@ app.route('/students')
                                                         {
                                                             if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString()||cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
                                                             {
-                                                                //console.log("Found the grade and it's: "+cleanedGrades[f][2]+"\n");
                                                                 studentsMark=cleanedGrades[f][2];
                                                             }
                                                         }
@@ -505,19 +585,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark>requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark>requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+
                                                                 }
                                                                 else
                                                                 {
@@ -526,8 +601,7 @@ app.route('/students')
                                                             }
                                                             else
                                                             {
-                                                                //reject
-                                                                //break
+
                                                             }
                                                         break;
 
@@ -536,19 +610,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark>=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark>=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+
                                                                 }
                                                                 else
                                                                 {
@@ -557,8 +626,7 @@ app.route('/students')
                                                             }
                                                             else
                                                             {
-                                                                //reject
-                                                                //break
+
                                                             }
                                                         break;
 
@@ -567,19 +635,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark<requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark<requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+
                                                                 }
                                                                 else
                                                                 {
@@ -588,8 +651,7 @@ app.route('/students')
                                                             }
                                                             else
                                                             {
-                                                                //reject
-                                                                //break
+
                                                             }
                                                         break;
 
@@ -598,19 +660,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark<=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark<=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+                                                                    
                                                                 }
                                                                 else
                                                                 {
@@ -619,8 +676,7 @@ app.route('/students')
                                                             }
                                                             else
                                                             {
-                                                                //reject
-                                                                //break
+
                                                             }
                                                         break;
 
@@ -629,19 +685,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark==requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark==requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+
                                                                 }
                                                                 else
                                                                 {
@@ -660,19 +711,14 @@ app.route('/students')
                                                             {
                                                                 if(studentsMark!=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
                                                                     accepted=true;
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
                                                                 }
                                                             }
                                                             else if(accepted)
                                                             {
                                                                 if(studentsMark!=requiredMark)
                                                                 {
-                                                                    //console.log("Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]);
-                                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
-                                                                    //notPlaced=false;
+
                                                                 }
                                                                 else
                                                                 {
@@ -690,6 +736,15 @@ app.route('/students')
                                                 if(accepted)
                                                 {
                                                     returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                    var ProgramPlacement = new ProgramplacementModel({
+                                                      academicprogramcode: studentsChoice[q][2],
+                                                      distributionresult: Distributionresult,
+                                                      commentcode: null,
+                                                      student: cleanedStudents[i][3],
+                                                      choice: studentsChoice[q][1],
+                                                      override:"No"
+                                                    });
+                                                    ProgramPlacement.save();
                                                     notPlaced=false;
                                                 }
                                             }
@@ -703,12 +758,30 @@ app.route('/students')
                                         {
                                             //console.log("Student: "+cleanedStudents[i][1]+" is not eligibile for any program");
                                             returnMessage+="Student: "+cleanedStudents[i][1]+" is not eligibile for any program ("+cleanedStudents[i][2]+") \n";
+                                            var ProgramPlacement = new ProgramplacementModel({
+                                              academicprogramcode: null,
+                                              distributionresult: Distributionresult,
+                                              commentcode: null,
+                                              student: cleanedStudents[i][3],
+                                              choice: null,
+                                              override:"No"
+                                            });
+                                        ProgramPlacement.save();
                                         }
                                     }
                                     else
                                     {
                                         //console.log("Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR");
                                         returnMessage+="Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR ("+cleanedStudents[i][2]+") \n";
+                                        var ProgramPlacement = new ProgramplacementModel({
+                                          academicprogramcode: null,
+                                          distributionresult: Distributionresult,
+                                          commentcode: null,
+                                          student: cleanedStudents[i][3],
+                                          choice: null,
+                                          override:"No"
+                                        });
+                                        ProgramPlacement.save();
                                     }
                                 }
                             //console.log(returnMessage);
@@ -951,14 +1024,12 @@ app.route('/programrecords')
     });
 })
 .get(function (request, response) {
-    var Programrecord = request.query.programrecord;
-    if (!Programrecord) {
-        ProgramrecordModel.find(function (error, programrecords) {
-            if (error) response.send(error);
-            response.json({programrecord: programrecords});
-        });
-    }
+    ProgramrecordModel.find(function (error, programrecords) {
+        if (error) response.send(error);
+        response.json({programrecord: programrecords});
+    });
 });
+
 
 app.route('/programrecords/:programrecord_id')
 .get(function (request, response) {
