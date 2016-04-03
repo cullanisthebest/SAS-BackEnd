@@ -421,15 +421,118 @@ app.route('/students')
                         for(var i=0;i<cleanedItr.length;i++)
                         {
                             var holder=new Array(100);
+                            var holder1=new Array(100);
+                            var countHolder1=0;
                             var countOfLogicalExpressions=0;
                             for(var j=0;j<allLogicalExpressions.length;j++)
                             {
-
-                                //console.log(allLogicalExpressions[j].admissionrule+"=="+cleanedItr[i][3]);
                                 if(allLogicalExpressions[j].admissionrule.toString()==cleanedItr[i][3].toString())
                                 {
-                                    holder[countOfLogicalExpressions]=allLogicalExpressions[j].booleanExp;
-                                    countOfLogicalExpressions++;
+
+                                    //Parse the logical expressions
+                                    var splitter = allLogicalExpressions[j].booleanExp.split("");
+
+                                    var ExpressionArray=new Array(10);
+                                    var tempExpression;
+                                    //console.log(splitter);
+                                    var open=0;
+                                    var removed=false;
+                                    var hasBrackets=true;
+                                    var pass=0;
+                                    while(hasBrackets)
+                                    {
+                                        removed=false;
+                                        hasBrackets=false;
+                                        for(var r=0;r<splitter.length;r++)
+                                        {
+                                            if(splitter[r]=='('&&!removed)
+                                            {
+                                                splitter[r]='';
+                                                removed=true;
+                                                open++;
+                                            }
+                                            else if(splitter[r]=='(')
+                                            {
+                                                open++;
+                                            }
+                                            else if(removed&&splitter[r]==')')
+                                            {
+                                                open--;
+                                                if(open==0)
+                                                {
+                                                    splitter[r]='';
+
+                                                    //leave
+                                                    r=splitter.length;
+                                                    pass++;
+                                                }
+                                            }
+                                        }
+                                        //console.log("Pass:"+pass+" "+splitter.join(""));
+
+                                        // //check if there are still brackets
+                                        // for(var r=0;r<splitter.length;r++)
+                                        // {
+                                        //     if(splitter[r]=='('||splitter[r]==')')
+                                        //     {
+                                        //         hasBrackets=true;
+                                        //     }
+
+                                        // }
+
+                                        for(var r=0;r<splitter.length;r++)
+                                        {
+                                            if(splitter[r]=='('||splitter[r]==')')
+                                            {
+                                                //done
+                                                hasBrackets=true;
+                                                r=splitter.length;
+                                            }
+                                            else if(splitter.length>r+2)
+                                            {
+                                                if(splitter[r]=='&'&&splitter[r+1]=='&')
+                                                {
+                                                    //console.log("AND ELEMENT:"+splitter.join("").substring(0,r-3));
+                                                    holder1[countHolder1]=splitter.join("").substring(0,r-3);
+                                                    countHolder1++;
+
+                                                    splitter=splitter.join("").substring(r-3,splitter.length).split("");
+                                                }
+                                            }
+                                        }
+                                        if(hasBrackets==false)
+                                        {
+                                            //console.log("DONE ELEMENT"+splitter.join(""));
+                                            holder1[countHolder1]=splitter.join("");
+                                            countHolder1++;
+                                        }
+                                    }
+
+                                    for(var r=0;r<countHolder1;r++)
+                                    {
+                                        //
+                                        var toHolder=holder1[r].split("&&");
+                                        for(var w=0;w<toHolder.length;w++)
+                                        {
+                                            if(toHolder[w].length>0)
+                                            {
+                                                toHolder[w]=toHolder[w].replace('(','');
+                                                toHolder[w]=toHolder[w].replace(')','');
+                                                if(!toHolder[w].replace(' ','').length==0)
+                                                {
+                                                    //console.log("TO HOLDER"+w+toHolder[w]);
+                                                    holder[countOfLogicalExpressions]=toHolder[w];
+                                                    countOfLogicalExpressions++;
+                                                }
+                                            }
+
+                                            // holder[countOfLogicalExpressions]=toHolder[w];
+                                            // countOfLogicalExpressions++;
+                                        }
+                                    }
+                                    
+                                    //holder[countOfLogicalExpressions]=allLogicalExpressions[j].booleanExp;
+                                    //countOfLogicalExpressions++;
                                 }
                             }
                             cleanedItr[i][5]=new Array(countOfLogicalExpressions);
@@ -518,224 +621,259 @@ app.route('/students')
 
                                                 for(var l=0;l<studentsChoice[q][5].length;l++)
                                                 {
-                                                    //console.log("On boolean:"+l+" - "+studentsChoice[q][5][l]);
-                                                    var splitBool=studentsChoice[q][5][l].split(" ");
-                                                    var consideration=splitBool[1];//AVG
-                                                    var studentsMark;
-                                                    var operator=splitBool[3];//operator
-                                                    var requiredMark=splitBool[4];//mark
-                                                    if(consideration=="AVG")
+                                                //     //console.log("On boolean:"+l+" - "+studentsChoice[q][5][l]);
+                                                    var splitBool1=studentsChoice[q][5][l].split("||");
+                                                    //console.log(splitBool1);
+
+                                                    
+                                                    //check each part of the criteria part
+                                                    for(var g=0;g<splitBool1.length;g++)
                                                     {
-                                                        //then just use average
-                                                        studentsMark=cleanedStudents[i][2];
-                                                    }
-                                                    else
-                                                    {
-                                                        //find students grade in that course...
-                                                        //console.log(splitBool);
-                                                        var code=splitBool[1];
-                                                        var number=splitBool[2];
-                                                        var number1="XXXX";
-                                                        //var ABcourse=false;
-                                                        console.log("Code: "+code+" - Number:"+number);
-                                                        if(number.includes("A"))
-                                                        {
-                                                            //console.log("Includes A");
-                                                            number1=number.replace("A","B");
-                                                            //ABcourse=true;
-                                                            //console.log(number);
-                                                        }
-                                                        else if(number.includes("B"))
-                                                        {
-                                                            //console.log("Includes B");
-                                                            number1=number.replace("B","A");
-                                                            //ABcourse=true;
-                                                            //console.log(number);
-                                                        }
-                                                        console.log("Code: "+code+" - Number:"+number1);
-                                                        var courseId;
-                                                        var courseId1="XXXX";
+                                                        var splitBool=splitBool1[g].split(" ");
+                                                        console.log(splitBool);
 
-                                                        //find course id
-                                                        for(var f=0;f<cleanedCourses.length;f++)
+                                                        //find first non empty element
+                                                        var index;
+                                                        for(var m=0;m<splitBool.length;m++)
                                                         {
-                                                            if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number)
+                                                            if(splitBool[m]!="")
                                                             {
-                                                                courseId=cleanedCourses[f][0];
-                                                            }
-                                                            if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number1)
-                                                            {
-                                                                courseId1=cleanedCourses[f][0];
+                                                                index=m;
+                                                                m=splitBool.length;
                                                             }
                                                         }
-
-                                                        //find students mark
-                                                        for(var f=0;f<cleanedGrades.length;f++)
+                                                        var code=splitBool[index];//AVG
+                                                        var operator=splitBool[index+2];//operator
+                                                        var requiredMark=splitBool[index+3];
+                                                        var number=splitBool[index+1];
+                                                        // console.log("code "+code+"\n");
+                                                        // console.log("operator "+operator+"\n");
+                                                        // console.log("required "+requiredMark+"\n");
+                                                        // console.log("number"+number+"\n");
+                                                        //var consideration=splitBool[1];//AVG
+                                                        //var studentsMark;
+                                                        //var operator=splitBool[3];//operator
+                                                        //var requiredMark=splitBool[4];//mark
+                                                        if(code=="AVG")
                                                         {
-                                                            if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString()||cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                            //then just use average
+                                                            studentsMark=cleanedStudents[i][2];
+                                                        }
+                                                        else
+                                                        {
+                                                            //find students grade in that course...
+                                                            //console.log(splitBool);
+                                                            //var code=splitBool[1];
+                                                            //var number=splitBool[2];
+                                                            var number1="XXXX";
+                                                            //var ABcourse=false;
+                                                            //console.log("Code: "+code+" - Number:"+number);
+                                                            if(number.includes("A"))
                                                             {
-                                                                studentsMark=cleanedGrades[f][2];
+                                                                //console.log("Includes A");
+                                                                number1=number.replace("A","B");
+                                                                //ABcourse=true;
+                                                                //console.log(number);
+                                                            }
+                                                            else if(number.includes("B"))
+                                                            {
+                                                                //console.log("Includes B");
+                                                                number1=number.replace("B","A");
+                                                                //ABcourse=true;
+                                                                //console.log(number);
+                                                            }
+                                                            //console.log("Code: "+code+" - Number:"+number1);
+                                                            var courseId;
+                                                            var courseId1="XXXX";
+
+                                                            //find course id
+                                                            for(var f=0;f<cleanedCourses.length;f++)
+                                                            {
+                                                                if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number)
+                                                                {
+                                                                    courseId=cleanedCourses[f][0];
+                                                                }
+                                                                if(cleanedCourses[f][1]==code&&cleanedCourses[f][2]==number1)
+                                                                {
+                                                                    courseId1=cleanedCourses[f][0];
+                                                                }
+                                                            }
+
+                                                            //find students mark
+                                                            for(var f=0;f<cleanedGrades.length;f++)
+                                                            {
+                                                                if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString()||cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                                {
+                                                                    studentsMark=cleanedGrades[f][2];
+                                                                }
                                                             }
                                                         }
-                                                    }
-                                                    switch(operator)
-                                                    {
-                                                        case">":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark>requiredMark)
+                                                        switch(operator)
+                                                        {
+                                                            case">":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    accepted=true;
+                                                                    if(studentsMark>requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark>requiredMark)
+                                                                else if(accepted)
                                                                 {
+                                                                    if(studentsMark>requiredMark)
+                                                                    {
 
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
+
                                                                 }
-                                                            }
-                                                            else
-                                                            {
+                                                            break;
 
-                                                            }
-                                                        break;
-
-                                                        case">=":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark>=requiredMark)
+                                                            case">=":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    accepted=true;
+                                                                    if(studentsMark>=requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark>=requiredMark)
+                                                                else if(accepted)
                                                                 {
+                                                                    if(studentsMark>=requiredMark)
+                                                                    {
 
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
+
                                                                 }
-                                                            }
-                                                            else
-                                                            {
+                                                            break;
 
-                                                            }
-                                                        break;
-
-                                                        case"<":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark<requiredMark)
+                                                            case"<":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    accepted=true;
+                                                                    if(studentsMark<requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark<requiredMark)
+                                                                else if(accepted)
                                                                 {
+                                                                    if(studentsMark<requiredMark)
+                                                                    {
 
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
-                                                                }
-                                                            }
-                                                            else
-                                                            {
 
-                                                            }
-                                                        break;
-
-                                                        case"<=":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark<=requiredMark)
-                                                                {
-                                                                    accepted=true;
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark<=requiredMark)
+                                                            break;
+
+                                                            case"<=":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    
+                                                                    if(studentsMark<=requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
+                                                                }
+                                                                else if(accepted)
+                                                                {
+                                                                    if(studentsMark<=requiredMark)
+                                                                    {
+                                                                        
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
+
                                                                 }
-                                                            }
-                                                            else
-                                                            {
+                                                            break;
 
-                                                            }
-                                                        break;
-
-                                                        case"=":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark==requiredMark)
+                                                            case"=":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    accepted=true;
+                                                                    if(studentsMark==requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark==requiredMark)
+                                                                else if(accepted)
                                                                 {
+                                                                    if(studentsMark==requiredMark)
+                                                                    {
 
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
+                                                                    //reject
+                                                                    //break
                                                                 }
-                                                            }
-                                                            else
-                                                            {
-                                                                //reject
-                                                                //break
-                                                            }
-                                                        break;
+                                                            break;
 
-                                                        case"!=":
-                                                            if(!accepted&&l==0)
-                                                            {
-                                                                if(studentsMark!=requiredMark)
+                                                            case"!=":
+                                                                if(!accepted&&l==0)
                                                                 {
-                                                                    accepted=true;
+                                                                    if(studentsMark!=requiredMark)
+                                                                    {
+                                                                        accepted=true;
+                                                                    }
                                                                 }
-                                                            }
-                                                            else if(accepted)
-                                                            {
-                                                                if(studentsMark!=requiredMark)
+                                                                else if(accepted)
                                                                 {
+                                                                    if(studentsMark!=requiredMark)
+                                                                    {
 
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        accepted=false;
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    accepted=false;
+                                                                    //reject
+                                                                    //break
                                                                 }
-                                                            }
-                                                            else
-                                                            {
-                                                                //reject
-                                                                //break
-                                                            }
-                                                        break;
+                                                            break;
+                                                        }
+
+                                                        //One part of the Or is true move on
+                                                        if(accepted==true)
+                                                        {
+                                                            //leave loop
+                                                            g=g.length;
+                                                        }
                                                     }
                                                 }
                                                 if(accepted)
                                                 {
-                                                    returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
+                                                    //returnMessage+="Student: "+cleanedStudents[i][1]+" Was placed into: "+studentsChoice[q][4]+" - choice:"+studentsChoice[q][1]+"\n";
                                                     var ProgramPlacement = new ProgramplacementModel({
                                                       academicprogramcode: studentsChoice[q][2],
                                                       distributionresult: Distributionresult,
@@ -757,13 +895,13 @@ app.route('/students')
                                         if(notPlaced)
                                         {
                                             //console.log("Student: "+cleanedStudents[i][1]+" is not eligibile for any program");
-                                            returnMessage+="Student: "+cleanedStudents[i][1]+" is not eligibile for any program ("+cleanedStudents[i][2]+") \n";
+                                            //returnMessage+="Student: "+cleanedStudents[i][1]+" is not eligibile for any program ("+cleanedStudents[i][2]+") \n";
                                             var ProgramPlacement = new ProgramplacementModel({
                                               academicprogramcode: null,
                                               distributionresult: Distributionresult,
                                               commentcode: null,
                                               student: cleanedStudents[i][3],
-                                              choice: null,
+                                              choice: "INELIGIBLE",
                                               override:"No"
                                             });
                                         ProgramPlacement.save();
@@ -772,20 +910,18 @@ app.route('/students')
                                     else
                                     {
                                         //console.log("Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR");
-                                        returnMessage+="Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR ("+cleanedStudents[i][2]+") \n";
+                                        //returnMessage+="Student: "+cleanedStudents[i][1]+" Was not placed for due to incomplete ITR ("+cleanedStudents[i][2]+") \n";
                                         var ProgramPlacement = new ProgramplacementModel({
                                           academicprogramcode: null,
                                           distributionresult: Distributionresult,
                                           commentcode: null,
                                           student: cleanedStudents[i][3],
-                                          choice: null,
+                                          choice: "No ITR",
                                           override:"No"
                                         });
                                         ProgramPlacement.save();
                                     }
                                 }
-                            //console.log(returnMessage);
-                            //encapsulate as a student object
 
                             allStudents[0].number=returnMessage;
                             response.json({student:allStudents[0]});
