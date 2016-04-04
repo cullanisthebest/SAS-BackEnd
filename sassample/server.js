@@ -61,7 +61,14 @@ var studentsSchema = mongoose.Schema(
     academicload: {type: mongoose.Schema.ObjectId, ref: 'AcademicloadModel'},
     grades: [{type: mongoose.Schema.ObjectId, ref: ('GradeModel')}],
     distributionresults: [{type: mongoose.Schema.ObjectId, ref: ('DistributionresultModel')}],
-    itrprograms: [{type: mongoose.Schema.ObjectId,ref: 'ItrprogramModel'}]
+    itrprograms: [{type: mongoose.Schema.ObjectId,ref: 'ItrprogramModel'}],
+
+        // ADDED MM
+    hSchool: [{type: mongoose.Schema.ObjectId, ref: ('SecondaryschoolModel')}],
+    awardInfo: [{type: mongoose.Schema.ObjectId, ref: ('ScholarandawardcodeModel')}],
+    highschooladmissionaverage: {type: mongoose.Schema.ObjectId, ref: 'HighschooladmissionaverageModel'},
+    admBase: [{type: mongoose.Schema.ObjectId, ref: ('BasisofadmissionModel')}]
+    // END ADDED MM
 }
 );
 var residencySchema = mongoose.Schema(
@@ -223,6 +230,62 @@ var programplacementSchema = mongoose.Schema(
 }
 );
 
+// ADDED MM
+var secondaryschoolSchema = mongoose.Schema(
+{
+    name: String,
+    student: {type: mongoose.Schema.ObjectId, ref: 'StudentsModel'},
+    highschoolcoursesmarks: [{type: mongoose.Schema.ObjectId, ref: ('HighschoolcoursesmarkModel')}]
+}
+);
+var highschoolcoursesmarksSchema = mongoose.Schema(
+{
+    level: String,
+    source: String,
+    unit: String,
+    grade: String,
+    secondaryschool: {type: mongoose.Schema.ObjectId, ref: 'StudentsModel'},
+    highschoolsubject: {type: mongoose.Schema.ObjectId, ref: 'HighschoolsubjectModel'},
+}
+);
+var highschoolsubjectSchema = mongoose.Schema(
+{
+    name: String,
+    description: String,
+    highschoolcoursesmarks: [{type: mongoose.Schema.ObjectId, ref: ('HighschoolcoursesmarkModel')}]
+}
+);
+var scholarandawardcodeSchema = mongoose.Schema(
+{
+    name: String,
+    student: {type: mongoose.Schema.ObjectId, ref: 'ScholarandawardcodeModel'}
+}
+);
+
+var highschooladmissionaverageSchema = mongoose.Schema(
+{
+    first: String,
+    midYear: String,
+    _final: String,
+    grade11: String,
+    student: {type:mongoose.Schema.ObjectId, ref: 'student'}
+}
+);
+var basisofadmissionSchema = mongoose.Schema(
+{
+    date: String,
+    comment: String,
+    student: {type:mongoose.Schema.ObjectId, ref: 'student'},
+    basisCode: {type:mongoose.Schema.ObjectId, ref: 'basisofadmissioncode'}
+}
+);
+var basisofadmissioncodeSchema = mongoose.Schema(
+{
+    name: String,
+    basisofadmission: {type:mongoose.Schema.ObjectId, ref: 'basisofadmission'} 
+});
+// END ADDED MM
+
 var StudentsModel = mongoose.model('student', studentsSchema);
 var ResidencyModel = mongoose.model('residency', residencySchema);
 var GenderModel = mongoose.model('gender', genderSchema);
@@ -246,6 +309,15 @@ var AdmissionruleModel = mongoose.model('admissionrule', admissionruleSchema);
 var LogicalexpressionModel = mongoose.model('logicalexpression', logicalexpressionSchema);
 var ProgramplacementModel = mongoose.model('programplacement',programplacementSchema);
 
+// ADDED MM
+var SecondaryschoolModel = mongoose.model('secondaryschool', secondaryschoolSchema);
+var HighschoolcoursesmarkModel = mongoose.model('highschoolcoursesmark', highschoolcoursesmarksSchema);
+var HighschoolsubjectModel = mongoose.model('highschoolsubject', highschoolsubjectSchema);
+var ScholarandawardcodeModel = mongoose.model('scholarandawardcode', scholarandawardcodeSchema);
+var HighschooladmissionaverageModel = mongoose.model('highschooladmissionaverage', highschooladmissionaverageSchema);
+var BasisofadmissionModel = mongoose.model('basisofadmission', basisofadmissionSchema);
+var BasisofadmissioncodeModel = mongoose.model('basisofadmissioncode',basisofadmissioncodeSchema);
+// END ADDED MM
 
 app.route('/programplacements')
 .post(function (request, response) {
@@ -2354,6 +2426,520 @@ app.route('/logicalexpressions/:logicalexpression_id')
 // END ADDED -- MM
 
 //END ADDED - LOGICALEXPRESSIONS
+
+
+// ADDED MM
+app.route('/secondaryschools')
+.post(function (request, response) {
+    var secondaryschool = new SecondaryschoolModel(request.body.secondaryschool);
+    secondaryschool.save(function (error) {
+        if (error) response.send(error);
+        response.json({secondaryschool: secondaryschool});
+    });
+})
+.get(function (request, response) {
+    var Secondaryschool = request.query.secondaryschool;
+    var student = request.query.student;
+    if (student) {
+        SecondaryschoolModel.find({"student": student}, function (error, secondaryschools) {
+            if (error) response.send(error);
+            response.json({secondaryschool: secondaryschools});
+        });
+    }
+    else {
+        SecondaryschoolModel.find(function (error, secondaryschools) {
+            if (error) response.send(error);
+            response.json({secondaryschool: secondaryschools});
+        });
+    }
+});
+
+app.route('/secondaryschools/:secondaryschool_id')
+.get(function (request, response) {
+    SecondaryschoolModel.findById(request.params.secondaryschool_id, function (error, secondaryschool) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            response.json({secondaryschool: secondaryschool});
+        }
+    });
+})
+.put(function (request, response) {
+    SecondaryschoolModel.findById(request.params.secondaryschool_id, function (error, secondaryschool) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            secondaryschool.name = request.body.secondaryschool.name;
+            secondaryschool.student = request.body.secondaryschool.student;
+
+            secondaryschool.save(function (error) {
+                if (error) {
+                    response.send({error: error});
+                }
+                else {
+                    response.json({secondaryschool: secondaryschool});
+                }
+            });
+        }
+    });
+})
+.delete(function (request, response) {
+    SecondaryschoolModel.findByIdAndRemove(request.params.secondaryschool_id,
+        function (error, deleted) {
+            if (!error) {
+                response.json({secondaryschool: deleted});
+            };
+        }
+        );
+});
+// END ADDED MM
+
+
+// ADDED MM
+app.route('/highschoolcoursesmarks')
+.post(function (request, response) {
+    var highschoolcoursesmark = new HighschoolcoursesmarkModel(request.body.highschoolcoursesmark);
+    highschoolcoursesmark.save(function (error) {
+        if (error) response.send(error);
+        response.json({highschoolcoursesmark: highschoolcoursesmark});
+    });
+})
+.get(function (request, response) {
+    var highschoolcoursesmark = request.query.highschoolcoursesmark;
+    var secondaryschool = request.query.secondaryschool;
+    var highschoolsubject = request.query.highschoolsubject;
+    if (secondaryschool) {
+        HighschoolcoursesmarkModel.find({"secondaryschool": secondaryschool}, function (error, highschoolcoursesmarks) {
+            if (error) response.send(error);
+            response.json({highschoolcoursesmark: highschoolcoursesmarks});
+        });
+    }
+    else if(highschoolsubject){
+        HighschoolcoursesmarkModel.find({"highschoolsubject":highschoolsubject}, function (error, highschoolcoursesmarks) {
+            if (error) response.send(error);
+            response.json({highschoolcoursesmark: highschoolcoursesmarks});
+        });
+    }
+    else {
+        HighschoolcoursesmarkModel.find(function (error, highschoolcoursesmarks) {
+            if (error) response.send(error);
+            response.json({highschoolcoursesmark: highschoolcoursesmarks});
+        });
+    } 
+});
+
+app.route('/highschoolcoursesmarks/:highschoolcoursesmark_id')
+.get(function (request, response) {
+    HighschoolcoursesmarkModel.findById(request.params.highschoolcoursesmark_id, function (error, highschoolcoursesmark) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            response.json({highschoolcoursesmark: highschoolcoursesmark});
+        }
+    });
+})
+.put(function (request, response) {
+    HighschoolcoursesmarkModel.findById(request.params.highschoolcoursesmark_id, function (error, highschoolcoursesmark) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            highschoolcoursesmark.level = request.body.highschoolcoursesmark.level;
+            highschoolcoursesmark.source = request.body.highschoolcoursesmark.source;
+            highschoolcoursesmark.unit = request.body.highschoolcoursesmark.unit;
+            highschoolcoursesmark.grade = request.body.highschoolcoursesmark.grade;
+            highschoolcoursesmark.secondaryschool = request.body.highschoolcoursesmark.secondaryschool;
+
+            highschoolcoursesmark.save(function (error) {
+                if (error) {
+                    response.send({error: error});
+                }
+                else {
+                    response.json({highschoolcoursesmark: highschoolcoursesmark});
+                }
+            });
+        }
+    });
+})
+.delete(function (request, response) {
+    HighschoolcoursesmarkModel.findByIdAndRemove(request.params.highschoolcoursesmark_id,
+        function (error, deleted) {
+            if (!error) {
+                response.json({highschoolcoursesmark: deleted});
+            };
+        }
+        );
+});
+// END ADDED
+
+
+// ADDED MM
+app.route('/highschoolsubjects')
+.post(function (request, response) {
+    var highschoolsubject = new HighschoolsubjectModel(request.body.highschoolsubject);
+    highschoolsubject.save(function (error) {
+        if (error) response.send(error);
+        response.json({highschoolsubject: highschoolsubject});
+    });
+})
+.get(function (request, response) {
+    var highschoolsubject = request.query.highschoolsubject;
+    if (!highschoolsubject) {
+        HighschoolsubjectModel.find(function (error, highschoolsubjects) {
+            if (error) response.send(error);
+            response.json({highschoolsubject: highschoolsubjects});
+        });
+    } 
+});
+
+app.route('/highschoolsubjects/:highschoolsubject_id')
+.get(function (request, response) {
+    HighschoolsubjectModel.findById(request.params.highschoolsubject_id, function (error, highschoolsubject) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            response.json({highschoolsubject: highschoolsubject});
+        }
+    });
+})
+.put(function (request, response) {
+    HighschoolsubjectModel.findById(request.params.highschoolsubject_id, function (error, highschoolsubject) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            highschoolsubject.name = request.body.highschoolsubject.name;
+            highschoolsubject.description = request.body.highschoolsubject.description;
+
+            highschoolsubject.save(function (error) {
+                if (error) {
+                    response.send({error: error});
+                }
+                else {
+                    response.json({highschoolsubject: highschoolsubject});
+                }
+            });
+        }
+    });
+})
+.delete(function (request, response) {
+    HighschoolsubjectModel.findByIdAndRemove(request.params.highschoolsubject_id,
+        function (error, deleted) {
+            if (!error) {
+                response.json({highschoolsubject: deleted});
+            };
+        }
+        );
+});
+// END ADDED
+
+// ADDED MM
+app.route('/scholarandawardcodes')
+.post(function (request, response) {
+    var scholarandawardcode = new ScholarandawardcodeModel(request.body.scholarandawardcode);
+    scholarandawardcode.save(function (error) {
+        if (error) response.send(error);
+        response.json({scholarandawardcode: scholarandawardcode});
+    });
+})
+.get(function (request, response) {
+    var Scholarandawardcode = request.query.scholarandawardcode;
+    var student = request.query.student;
+    if (student) {
+        ScholarandawardcodeModel.find({"student": student}, function (error, scholarandawardcodes) {
+            if (error) response.send(error);
+            response.json({scholarandawardcode: scholarandawardcodes});
+        });
+    }
+    else {
+        ScholarandawardcodeModel.find(function (error, scholarandawardcodes) {
+            if (error) response.send(error);
+            response.json({scholarandawardcode: scholarandawardcodes});
+        });
+    }
+});
+
+app.route('/scholarandawardcodes/:scholarandawardcode_id')
+.get(function (request, response) {
+    ScholarandawardcodeModel.findById(request.params.scholarandawardcode_id, function (error, scholarandawardcode) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            response.json({scholarandawardcode: scholarandawardcode});
+        }
+    });
+})
+.put(function (request, response) {
+    ScholarandawardcodeModel.findById(request.params.scholarandawardcode_id, function (error, scholarandawardcode) {
+        if (error) {
+            response.send({error: error});
+        }
+        else {
+            scholarandawardcode.name = request.body.scholarandawardcode.name;
+            scholarandawardcode.student = request.body.scholarandawardcode.student;
+
+            scholarandawardcode.save(function (error) {
+                if (error) {
+                    response.send({error: error});
+                }
+                else {
+                    response.json({scholarandawardcode: scholarandawardcode});
+                }
+            });
+        }
+    });
+})
+.delete(function (request, response) {
+    ScholarandawardcodeModel.findByIdAndRemove(request.params.scholarandawardcode_id,
+        function (error, deleted) {
+            if (!error) {
+                response.json({scholarandawardcode: deleted});
+            };
+        }
+        );
+});
+// END ADDED MM
+
+// ADDED MM --> SYD'S SERVER FILE
+app.route('/highschooladmissionaverages')
+.post(function (request, response) {
+    var highschooladmissionaverage = new HighschooladmissionaverageModel(request.body.highschooladmissionaverage);
+    highschooladmissionaverage.save(function (error) {
+        if (error) response.send(error);
+        response.json({highschooladmissionaverage: highschooladmissionaverage});
+    });
+})
+.get(function (request, response) {
+    var Highschooladmissionaverage = request.query.highschooladmissionaverage;
+    var student = request.query.student;
+    console.log(student);
+    if (student) {
+        HighschooladmissionaverageModel.find({"student": student}, function (error, highschooladmissionaverages) {
+            if (error) response.send(error);
+            response.json({highschooladmissionaverage: highschooladmissionaverages});
+        });
+    }
+    else {
+        HighschooladmissionaverageModel.find(function (error, highschooladmissionaverages) {
+            if (error) response.send(error);
+            response.json({highschooladmissionaverage: highschooladmissionaverages});
+        });
+    }
+});
+//         StudentsModel.find({"highschooladmissionaverage": request.query.highschooladmissionaverage}, function (error, students) {
+    app.route('/highschooladmissionaverages/:highschooladmissionaverage_id')
+    .get(function (request, response) {
+        HighschooladmissionaverageModel.findById(request.params.highschooladmissionaverage_id, function (error, highschooladmissionaverage) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                response.json({highschooladmissionaverage: highschooladmissionaverage});
+            }
+        });
+    })
+    .put(function (request, response) {
+        HighschooladmissionaverageModel.findById(request.params.highschooladmissionaverage_id, function (error, highschooladmissionaverage) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                highschooladmissionaverage.first = request.body.highschooladmissionaverage.first;
+                highschooladmissionaverage.midYear = request.body.highschooladmissionaverage.midYear;
+                highschooladmissionaverage._final = request.body.highschooladmissionaverage._final;
+                highschooladmissionaverage.grade11 = request.body.highschooladmissionaverage.grade11;
+                highschooladmissionaverage.student = request.body.highschooladmissionaverage.student;
+                highschooladmissionaverage.save(function (error) {
+                    if (error) {
+                        response.send({error: error});
+                    }
+                    else {
+                        response.json({highschooladmissionaverage: highschooladmissionaverage});
+                    }
+                });
+            }
+        });
+    })
+    .delete(function (request, response) {
+        HighschooladmissionaverageModel.findByIdAndRemove(request.params.highschooladmissionaverage_id,
+            function (error, deleted) {
+                if (!error) {
+                    response.json({highschooladmissionaverage: deleted});
+                };
+            }
+            );
+    });
+//end added - highschooladmissionaverage
+//added - basisofadmission
+app.route('/basisofadmissions')
+.post(function (request, response) {
+    var basisofadmission = new BasisofadmissionModel(request.body.basisofadmission);
+    basisofadmission.save(function (error) {
+        if (error) response.send(error);
+        response.json({basisofadmission: basisofadmission});
+    });
+})
+.get(function (request, response) {
+    var Basisofadmission = request.query.basisofadmission;
+    var date = request.query.date;
+    var comment = request.query.comment;
+    var basisCode = request.query.basisCode;
+    var student = request.query.student;
+    if (student) {
+        BasisofadmissionModel.find({"student": student}, function (error, basisofadmissions) {
+            if (error) response.send(error);
+            response.json({basisofadmission: basisofadmissions});
+        });
+    }
+    else if (date) {
+        BasisofadmissionModel.find({"date": date}, function (error, basisofadmissions) {
+            if (error) response.send(error);
+            response.json({basisofadmission: basisofadmissions});
+        });
+    }
+    else if (comment) {
+        BasisofadmissionModel.find({"comment": comment}, function (error, basisofadmissions) {
+            if (error) response.send(error);
+            response.json({basisofadmission: basisofadmissions});
+        });
+    }
+    else if (basisCode) {
+        BasisofadmissionModel.find({"basisCode": basisCode}, function (error, basisofadmissions) {
+            if (error) response.send(error);
+            response.json({basisofadmission: basisofadmissions});
+        });
+    }
+    else {
+        BasisofadmissionModel.find(function (error, basisofadmissions) {
+            if (error) response.send(error);
+            response.json({basisofadmission: basisofadmissions});
+        });
+    }
+});
+//         StudentsModel.find({"basisofadmission": request.query.basisofadmission}, function (error, students) {
+    app.route('/basisofadmissions/:basisofadmission_id')
+    .get(function (request, response) {
+        BasisofadmissionModel.findById(request.params.basisofadmission_id, function (error, basisofadmission) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                response.json({basisofadmission: basisofadmission});
+            }
+        });
+    })
+    .put(function (request, response) {
+        BasisofadmissionModel.findById(request.params.basisofadmission_id, function (error, basisofadmission) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                basisofadmission.date = request.body.basisofadmission.date;
+                basisofadmission.comment = request.body.basisofadmission.comment;
+                basisofadmission.basisCode = request.body.basisofadmission.basisCode;
+                basisofadmission.student = request.body.basisofadmission.student;
+                basisofadmission.save(function (error) {
+                    if (error) {
+                        response.send({error: error});
+                    }
+                    else {
+                        response.json({basisofadmission: basisofadmission});
+                    }
+                });
+            }
+        });
+    })
+    .delete(function (request, response) {
+        BasisofadmissionModel.findByIdAndRemove(request.params.basisofadmission_id,
+            function (error, deleted) {
+                if (!error) {
+                    response.json({basisofadmission: deleted});
+                };
+            }
+            );
+    });
+//end added - basisofadmission
+//added - basisofadmissioncode
+app.route('/basisofadmissioncodes')
+.post(function (request, response) {
+    var basisofadmissioncode = new BasisofadmissioncodeModel(request.body.basisofadmissioncode);
+    basisofadmissioncode.save(function (error) {
+        if (error) response.send(error);
+        response.json({basisofadmissioncode: basisofadmissioncode});
+    });
+})
+.get(function (request, response) {
+    var Basisofadmissioncode = request.query.basisofadmissioncode;
+    var name = request.query.name;
+    var basisofadmission = request.query.basisofadmission;
+    if (name) {
+        BasisofadmissioncodeModel.find({"name": name}, function (error, basisofadmissioncodes) {
+            if (error) response.send(error);
+            response.json({basisofadmissioncode: basisofadmissioncodes});
+        });
+    }
+    else if (basisofadmission) {
+        BasisofadmissioncodeModel.find({"basisofadmission": basisofadmission}, function (error, basisofadmissioncodes) {
+            if (error) response.send(error);
+            response.json({basisofadmissioncode: basisofadmissioncodes});
+        });
+    }
+    else {
+        BasisofadmissioncodeModel.find(function (error, basisofadmissioncodes) {
+            if (error) response.send(error);
+            response.json({basisofadmissioncode: basisofadmissioncodes});
+        });
+    }
+});
+//         StudentsModel.find({"basisofadmissioncode": request.query.basisofadmissioncode}, function (error, students) {
+    app.route('/basisofadmissioncodes/:basisofadmissioncode_id')
+    .get(function (request, response) {
+        BasisofadmissioncodeModel.findById(request.params.basisofadmissioncode_id, function (error, basisofadmissioncode) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                response.json({basisofadmissioncode: basisofadmissioncode});
+            }
+        });
+    })
+    .put(function (request, response) {
+        BasisofadmissioncodeModel.findById(request.params.basisofadmissioncode_id, function (error, basisofadmissioncode) {
+            if (error) {
+                response.send({error: error});
+            }
+            else {
+                basisofadmissioncode.name = request.body.basisofadmissioncode.name;
+                basisofadmissioncode.basisofadmission = request.body.basisofadmissioncode.basisofadmission;
+                basisofadmissioncode.save(function (error) {
+                    if (error) {
+                        response.send({error: error});
+                    }
+                    else {
+                        response.json({basisofadmissioncode: basisofadmissioncode});
+                    }
+                });
+            }
+        });
+    })
+    .delete(function (request, response) {
+        BasisofadmissioncodeModel.findByIdAndRemove(request.params.basisofadmissioncode_id,
+            function (error, deleted) {
+                if (!error) {
+                    response.json({basisofadmissioncode: deleted});
+                };
+            }
+            );
+    });
+//end added - basisofadmissioncode
+// END ADDED MM --> SYD'S SERVER FILE
+
+
 
 app.listen(7700, function () {
     console.log('Listening on port 7700');
