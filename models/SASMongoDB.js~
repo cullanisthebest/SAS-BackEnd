@@ -93,7 +93,7 @@ var RolePermissions = mongoose.model('rolePermission', rolePermissionSchema);
 var Logins = mongoose.model('login', loginSchema);
 var Roots = mongoose.model('root', rootSchema);
 
-mongoose.createConnection('mongodb://localhost/sasdb');
+mongoose.createConnection('mongodb://localhost/sasdb2');
 
 exports.Users = Users;
 exports.Passwords = Passwords;

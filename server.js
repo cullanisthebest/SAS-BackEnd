@@ -393,6 +393,7 @@ app.route('/students')
         var returnMessage="";
         var allStudents= [];
         var allItrprograms=[];
+        var allhavg=[];
         var allAcademicprogramcodes=[];
         var allLogicalExpressions=[];
         var allGrades=[];
@@ -406,10 +407,13 @@ app.route('/students')
             var day = dateObj.getUTCDate();
             var year = dateObj.getUTCFullYear();
             var newdate = day + "/" + month + "/" + year;
+
             Distributionresult= new DistributionresultModel({
                 date:newdate
             });
             Distributionresult.save();
+
+
             for (var i = 0; i < students.length; i++)
             {
                 allStudents.push(students[i]);
@@ -417,7 +421,7 @@ app.route('/students')
             var cleanedStudents=new Array(allStudents.length);
             for(var i=0;i<allStudents.length;i++)
             {
-              cleanedStudents[i]=new Array(4);
+              cleanedStudents[i]=new Array(5);
               cleanedStudents[i][0]=allStudents[i].id;
               cleanedStudents[i][1]=allStudents[i].number;
               cleanedStudents[i][2]=allStudents[i].cumAvg;
@@ -427,6 +431,38 @@ app.route('/students')
                 cleanedStudents[i][2]=0;
               }
             }
+
+
+
+
+
+
+            HighschooladmissionaverageModel.find(function (error, highschooladmissionaverages) {
+            for (var i = 0; i < highschooladmissionaverages.length; i++)
+            {
+                allhavg.push(highschooladmissionaverages[i]);
+            }
+            for(var j=0;j<cleanedStudents.length;j++)
+            {
+                for(var i=0;i<allhavg.length;i++)
+                {
+                    if(allhavg[i]!=null)
+                    {
+                        if(allhavg[i].student.toString()==cleanedStudents[j][0].toString())
+                        {
+                            cleanedStudents[j][4]=allhavg[i]._final;
+                        }
+                    }
+                }
+            }
+
+            //print
+            for(var i=0;i<cleanedStudents.length;i++)
+            {
+                console.log(cleanedStudents[i][4]);
+            }
+
+
 
             //insertion sort
             for(var i = 0; i < cleanedStudents.length; i++) 
@@ -498,6 +534,8 @@ app.route('/students')
                             var countOfLogicalExpressions=0;
                             for(var j=0;j<allLogicalExpressions.length;j++)
                             {
+                                if(cleanedItr[i][3]!=null)
+                                {
                                 if(allLogicalExpressions[j].admissionrule.toString()==cleanedItr[i][3].toString())
                                 {
 
@@ -606,6 +644,7 @@ app.route('/students')
                                     //holder[countOfLogicalExpressions]=allLogicalExpressions[j].booleanExp;
                                     //countOfLogicalExpressions++;
                                 }
+                                }
                             }
                             cleanedItr[i][5]=new Array(countOfLogicalExpressions);
                             for(var j=0;j<countOfLogicalExpressions;j++)
@@ -702,7 +741,7 @@ app.route('/students')
                                                     for(var g=0;g<splitBool1.length;g++)
                                                     {
                                                         var splitBool=splitBool1[g].split(" ");
-                                                        console.log(splitBool);
+                                                        //console.log(splitBool);
 
                                                         //find first non empty element
                                                         var index;
@@ -726,11 +765,29 @@ app.route('/students')
                                                         //var studentsMark;
                                                         //var operator=splitBool[3];//operator
                                                         //var requiredMark=splitBool[4];//mark
+                                                        console.log(code);
                                                         if(code=="AVG")
                                                         {
                                                             //then just use average
                                                             studentsMark=cleanedStudents[i][2];
                                                         }
+                                                        else if(code=="HAVG")
+                                                        {
+                                                            //use the students highschoolaverage
+                                                            studentsMark=cleanedStudents[i][4];
+                                                            //console.log("GOT HAVG");
+
+                                                        }
+
+
+
+
+
+
+
+
+
+
                                                         else
                                                         {
                                                             //find students grade in that course...
@@ -774,9 +831,16 @@ app.route('/students')
                                                             //find students mark
                                                             for(var f=0;f<cleanedGrades.length;f++)
                                                             {
-                                                                if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString()||cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                                if(cleanedStudents[i][0]!=null&&cleanedGrades[f][1]!=null&&cleanedGrades[f][0]!=null)
                                                                 {
-                                                                    studentsMark=cleanedGrades[f][2];
+                                                                    if(cleanedGrades[f][1].toString()==courseId&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                                    {
+                                                                        studentsMark=cleanedGrades[f][2];
+                                                                    }
+                                                                    else if(cleanedGrades[f][1].toString()==courseId1&&cleanedStudents[i][0].toString()==cleanedGrades[f][0].toString())
+                                                                    {
+                                                                        studentsMark=cleanedGrades[f][2];
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -1001,6 +1065,7 @@ app.route('/students')
                         });
                     });
                 });
+            });
             });
         });
     }
